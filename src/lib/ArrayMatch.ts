@@ -1,7 +1,7 @@
-import { assert, identity, toJson } from "..";
-import { CoffeeMatchList} from "../contact";
+import { assert, identity, toJson, ListData } from "..";
+import { CoffeeMatchArray} from "../contract";
 
-export default class ArrayMatch<T> implements CoffeeMatchList<T>
+export default class ArrayMatch<T>
 {
     private array : T[]
     private truth : boolean
@@ -14,7 +14,7 @@ export default class ArrayMatch<T> implements CoffeeMatchList<T>
         if(truth)
             this.not = new ArrayMatch(array, false);
     }
-    is(another: T[]){
+    is(another: ListData<T>){
         assert(identity(this.first, another),this.truth, "<array.is>")
     }
     length(exp : number){
@@ -24,8 +24,13 @@ export default class ArrayMatch<T> implements CoffeeMatchList<T>
         this.length(0);
     }
     contains(value : T){
-        const doesContain = this.array.find((val, index, object)=>identity(val, value));
-        assert(doesContain != undefined, this.truth, "<array.contains>");
+        let found = false;
+        for(let key in this.array){
+            const ilocal = this.array[key];
+            if(identity(ilocal, value))
+                found = true;
+        }
+        assert(found, this.truth, "<array.contains>");
     }
     index(index : number, val : T){
         assert(identity(this.array[index],val),this.truth, "<array.index>")
@@ -36,7 +41,7 @@ export default class ArrayMatch<T> implements CoffeeMatchList<T>
             assert(another.length === this.array.length, true,`${another.length} <array.values(length)> ${this.array.length}`)
             for(let i=0; i < another.length; i++){
                 const ilocal = this.array[i]
-                const ianother = this.array[i];
+                const ianother = another[i];
                 assert(identity(ilocal, ianother), true, `${toJson(ilocal)} <array.values(index: ${i})> ${toJson(ianother)}`)
             }
         }catch(e){

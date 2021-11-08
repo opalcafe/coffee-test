@@ -35,10 +35,10 @@ export interface CoffeeCheck<T> {
     throws():void
 }
 
-export interface CoffeeMatchList<T> {
-    not : CoffeeMatchList<T>
+export interface CoffeeMatchArray<T> {
+    not : CoffeeMatchArray<T>
 
-    is(another : T[]) : void
+    is(another : ListData<T>) : void
     length(size : number) : void
     empty():void
     contains(val : T) : void
@@ -46,6 +46,11 @@ export interface CoffeeMatchList<T> {
     values(another : ListData<T>) : void
     first(expect : T)  : void
     last(expect : T) : void
+    appearsExactly(val  :T, times : number):void
+    appearsGreater(val : T, times : number):void
+    appearsGreaterOrEqual(val : T, times : number):void
+    appearsLesser(val : T, times : number):void
+    appearsLesserOrEqual(val: T, times : number):void
 }
 
 export interface CoffeeCaller {

@@ -1,5 +1,5 @@
 import { assert } from "..";
-import { CoffeeCaller } from "../contact";
+import { CoffeeCaller } from "../contract";
 
 export default class CallerMatch implements CoffeeCaller {
     private name : string

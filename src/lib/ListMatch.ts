@@ -1,9 +1,11 @@
 import { assert, identity, ListData, toJson } from "..";
-import { CoffeeMatchList } from "../contact";
+import { CoffeeMatchArray } from "../contract";
+//import { CoffeeMatchList } from "../contact";
 
-export default class ListMatch<T> implements CoffeeMatchList<T>
+
+export default class ListMatch<T> implements CoffeeMatchArray<T>
 {
-    private array : ListData<T>
+    private array : any
     private truth : boolean
 
     not! : ListMatch<T>
@@ -36,10 +38,13 @@ export default class ListMatch<T> implements CoffeeMatchList<T>
     index(index : number, val : T){
         assert(identity(this.array[index],val),this.truth, "<array.index>")
     }
-    values(another: ListData<T>){
+    values(data: ListData<T>){
+        const another = data as any
         let equal = true;
+        const ilength = Object.keys(this.array).length;
+        const anotherLength = Object.keys(another).length;
         try{ 
-            assert(another.length === this.array.length, true,`${another.length} <array.values(length)> ${this.array.length}`)
+            assert(ilength === anotherLength, true,`${ilength} <array.values(length)> ${anotherLength}`)
             for(let key in this.array){
                 const ilocal = this.array[key]
                 const ianother = another[key];
@@ -56,6 +61,31 @@ export default class ListMatch<T> implements CoffeeMatchList<T>
     last(expect : T){
         const length = Object.keys(this.array).length;
         this.index(length-1, expect);
+    }
+    private __count(val : T) : number {
+        let found = 0;
+        for(let key in this.array){
+            const ilocal = this.array[key];
+            if(identity(ilocal, val))
+                ++found
+        }
+        return found;
+    }
+
+    appearsExactly(val  : T, times : number){
+        assert(this.__count(val) === times, this.truth, "<array.appearsExactly>")
+    }
+    appearsGreater(val : T, times : number){
+        assert(this.__count(val) > times, this.truth, "<array.appearsGreater>")
+    }
+    appearsGreaterOrEqual(val : T, times : number){
+        assert(this.__count(val) >= times, this.truth, "<array.appearsGreaterOrEqual>")
+    }
+    appearsLesser(val : T, times : number){
+        assert(this.__count(val) < times, this.truth, "<array.appearsLesser>")
+    }
+    appearsLesserOrEqual(val: T, times : number){
+        assert(this.__count(val) <= times, this.truth, "<array.appearsLesserOrEqual>")
     }
    
     

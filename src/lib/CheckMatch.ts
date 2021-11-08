@@ -1,5 +1,5 @@
 import { assert, check, identity, toJson } from "..";
-import { CoffeeCheck } from "../contact";
+import { CoffeeCheck } from "../contract";
 
 export default class CheckMatch<T> implements CoffeeCheck<T> {
     private val : any

@@ -1,8 +1,9 @@
 import ArrayMatch from "./lib/ArrayMatch";
 import CheckMatch from "./lib/CheckMatch";
 import CallerMatch from "./lib/CallerMatch";
-import { CoffeeCaller, CoffeeCheck, CoffeeMatchList } from "./contact";
+import { CoffeeCaller, CoffeeCheck, CoffeeMatchArray} from "./contract";
 import ListMatch from "./lib/ListMatch";
+
 
 type ExamDetail = {
     test : ()=>void,
@@ -10,7 +11,7 @@ type ExamDetail = {
 }
 
 const exams : ExamDetail[] = []
-export type ListData<T> = T[] | {[key : string | number]:T}
+export type ListData<T> = {[key : string] : T } | T[]
 
 export function assert(statement : boolean, truth : boolean, msg : string){
     //console.log(`${statement}|${truth}|${msg}`)
@@ -42,7 +43,7 @@ export function toJson(object : any):string{
     return JSON.stringify(object);
 }
 
-export function array<T>(array : ListData<T>) : CoffeeMatchList<T>{
+export function array<T>(array : ListData<T>) : CoffeeMatchArray<T>{
     return new ListMatch(array, true);
 }
 
