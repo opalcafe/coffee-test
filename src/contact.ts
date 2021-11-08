@@ -1,18 +1,31 @@
+import { ListData } from ".";
 
 export interface CoffeeCheck<T> {
     not : CoffeeCheck<T>
 
-    is(val : any):void
+    is(val : any) : void
+    isType(val : T) : void
     isTrue():void
     isFalse():void
     isNull():void
     isUndefined():void
-    isDefined():void
+    isDefined() : void
+    isTruthy() : void
     isGreater(check  : T):void
-    isGreaterOrEqual(check : T):void
+    isGreaterOrEqual(check : T) : void
+    isLesser(check : T) :void,
+    isLesserOrEqual(check  :T) : void
     isRange(lower : T, upper : T) : void
     isRangeExclude(lower : T, upper : T)  : void
-    isInstance(type : any):void
+    isInstance<T>(type : T):void
+    isNumber():void
+    isBoolean():void
+    isString():void
+    isObject():void
+    isFunction():void
+    isBigInt():void
+
+    isMatch(regex : RegExp) : void
 
     hasKey(key : string | number):void,
     hasKeySize(size : number):void
@@ -22,14 +35,15 @@ export interface CoffeeCheck<T> {
     throws():void
 }
 
-export interface CoffeeMatchArray<T> {
-    not : CoffeeMatchArray<T>
+export interface CoffeeMatchList<T> {
+    not : CoffeeMatchList<T>
 
     is(another : T[]) : void
     length(size : number) : void
+    empty():void
     contains(val : T) : void
     index(index : number, val : T) : void
-    values(another : T[]) : void
+    values(another : ListData<T>) : void
     first(expect : T)  : void
     last(expect : T) : void
 }

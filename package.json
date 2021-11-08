@@ -1,12 +1,12 @@
 {
-  "name": "coffee-test",
+  "name": "coffeetype-test",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
   
   "files": ["dist"],
   "scripts": {
-    "clean": "rmdir .\\dist\\lib /q",
+    "exam": "ts-node-dev --respawn ./test/Exams.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
