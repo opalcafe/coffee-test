@@ -24,7 +24,6 @@ export interface CoffeeCheck<T> {
     isObject():void
     isFunction():void
     isBigInt():void
-
     isMatch(regex : RegExp) : void
 
     hasKey(key : string | number):void,
@@ -46,6 +45,7 @@ export interface CoffeeMatchArray<T> {
     values(another : ListData<T>) : void
     first(expect : T)  : void
     last(expect : T) : void
+    
     appearsExactly(val  :T, times : number):void
     appearsGreater(val : T, times : number):void
     appearsGreaterOrEqual(val : T, times : number):void

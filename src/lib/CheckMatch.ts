@@ -1,4 +1,4 @@
-import { assert, check, identity, toJson } from "..";
+import { assert, check, identity, toString as toJson } from "..";
 import { CoffeeCheck } from "../contract";
 
 export default class CheckMatch<T> implements CoffeeCheck<T> {
@@ -11,10 +11,9 @@ export default class CheckMatch<T> implements CoffeeCheck<T> {
         this.truth = truth;
         if(truth)
             this.not = new CheckMatch(val, false);
-
     }
     is(another : any){
-        assert(identity(this.val,another),this.truth, `actual: ${toJson(this.val)}<check.is> expect:${toJson(another)}`)
+        assert(identity(this.val,another),this.truth, `actual:(${toJson(this.val)})\n<check.is>\nexpect:(${toJson(another)})`)
     }
     isType(val : T){
         this.is(val);
@@ -32,72 +31,71 @@ export default class CheckMatch<T> implements CoffeeCheck<T> {
         this.is(undefined);
     }
     isDefined(){
-        assert(this.val !== undefined, this.truth, `actual: ${toJson(this.val)}<check.isDefinied>`)
+        assert(this.val !== undefined, this.truth, `actual:(${toJson(this.val)})\n<check.isDefinied>`)
     }
     isTruthy(){
         let truthy = false;
         if(this.val)
             truthy = true;
-        assert(truthy, this.truth, `actual: ${toJson(this.val)}<check.isTruthy>`)
+        assert(truthy, this.truth, `actual:(${toJson(this.val)})\n<check.isTruthy>`)
     }
     isGreater(check : T){
-        assert(this.val > check, this.truth, `actual: ${toJson(this.val)} <check.isGreater> actual: ${toJson(check)}`)
+        assert(this.val > check, this.truth, `actual:(${toJson(this.val)})<check.isGreater>:(${toJson(check)})`)
     }
     isGreaterOrEqual(check : T){
-        assert(this.val >= check, this.truth, `actual: ${toJson(this.val)} <check.isGreaterOrEqual> expect: ${toJson(check)}`)
+        assert(this.val >= check, this.truth, `actual:(${toJson(this.val)})<check.isGreaterOrEqual>:(${toJson(check)})`)
     }
     isLesser(check : T){
-        assert(this.val < check, this.truth, `actual: ${toJson(this.val)} <check.isLesser> actual: ${toJson(check)}`)
+        assert(this.val < check, this.truth, `actual:(${toJson(this.val)})<check.isLesser>:(${toJson(check)})`)
     }
     isLesserOrEqual(check : T){
-        assert(this.val <= check, this.truth, `actual: ${toJson(this.val)} <check.isLesserOrEqual> actual: ${toJson(check)}`)
+        assert(this.val <= check, this.truth, `actual:(${toJson(this.val)})<check.isLesserOrEqual>:(${toJson(check)})`)
     }
     isRange(lower : T, upper : T){
-        assert(this.val >= lower && this.val <= upper, this.truth, `actual: ${toJson(this.val)} <check.isRange>(${toJson(lower)}:${toJson(upper)})`)
+        assert(this.val >= lower && this.val <= upper, this.truth, `actual:(${toJson(this.val)})<check.isRange>:(${toJson(lower)} to ${toJson(upper)})`)
     }
     isRangeExclude(lower : T, upper : T){
-        assert(this.val > lower && this.val < upper, this.truth, `actual: ${toJson(this.val)} <check.isRangeExclude>(${toJson(lower)}:${toJson(upper)})`)
+        assert(this.val > lower && this.val < upper, this.truth, `actual:(${toJson(this.val)})<check.isRangeExclude>:(${toJson(lower)} to ${toJson(upper)})`)
     }
     isInstance(type : any){
         const instance = this.val instanceof type
-        assert(instance, this.truth, `${toJson(this.val)} <check.isInstance> ${type}`)
+        assert(instance, this.truth, `actual:(${toJson(this.val)})\n<check.isInstance>\ntype:(${type})`)
     }
     isNumber(){
         const atype = typeof this.val
-        assert(atype === "number", this.truth, `${this.val} <check.isNumber>`)
+        assert(atype === "number", this.truth, `actual:(${toJson(this.val)})\n<check.isNumber>`)
     }
     isBoolean(){
         const atype = typeof this.val
-        assert(atype === "boolean", this.truth, `${this.val} <check.isBoolean>`)
+        assert(atype === "boolean", this.truth, `actual:(${toJson(this.val)})\n<check.isBoolean>`)
     }
     isString(){
         const atype = typeof this.val
-        assert(atype === "string", this.truth, `${this.val} <check.isString>`)
+        assert(atype === "string", this.truth, `actual:(${toJson(this.val)})\n<check.isString>`)
     }
     isObject(){
         const atype = typeof this.val
-        assert(atype === "object", this.truth, `${this.val} <check.isObject>`)
+        assert(atype === "object", this.truth, `actual:(${toJson(this.val)})\n<check.isObject>`)
     }
     isFunction(){
         const atype = typeof this.val
-        assert(atype === "function", this.truth, `${this.val} <check.isFunction>`)
+        assert(atype === "function", this.truth, `actual:(${toJson(this.val)})\n<check.isFunction>`)
     }
     isBigInt(){
         const atype = typeof this.val
-        assert(atype === "bigint", this.truth, `${this.val} <check.isBigInt>`)
+        assert(atype === "bigint", this.truth, `actual:(${toJson(this.val)})\n<check.isBigInt>`)
     }
     isMatch(regex : RegExp){
-        assert(regex.test(this.val), this.truth, `actual: ${this.val}<check.isMatch> regex: ${regex}`)
+        assert(regex.test(this.val), this.truth, `actual:(${toJson(this.val)})\n<check.isMatch>\nregex:(${regex})`)
     }
     hasKey(key : string | number){
         const child = this.val[key];
-        assert(child != undefined, this.truth, `${toJson(this.val)}<check.hasKey> :${key}`)
+        assert(child != undefined, this.truth, `actual:(${toJson(this.val)})\n<check.hasKey>\nkey:(${key})`)
     }
     hasKeySize(size : number){
         const keysize = Object.keys(this.val).length;
-        assert(keysize === size, this.truth, `${toJson(this.val)}<check.hasKeySize> :${size}`)
+        assert(keysize === size, this.truth, `actual:(${toJson(this.val)})\n<check.hasKeySize>\nsize:(${size})`)
     }
-
     in(collection : any){
         let found = false;
         for(let key in collection){
@@ -105,16 +103,21 @@ export default class CheckMatch<T> implements CoffeeCheck<T> {
             if(identity(ilocal, this.val))
                 found = true;
         }
-        assert(found, this.truth, `${toJson(this.val)} <check.in> ${toJson(collection)}`);
+        assert(found, this.truth, `actual:(${toJson(this.val)})\n<check.in>\ncollection:(${toJson(collection)})`);
     }
     throws(){
         let isThrown = false;
+        const isFunc = (typeof this.val == "function");
+        assert(isFunc, true, "<throws(isFunction)>")
         try{
             this.val()
         }catch(e){
             isThrown = true;
         }
-        assert(isThrown, this.truth, `<check.throws>`)
+        let toString = toJson(this.val);
+        toString = toString.split("\r")[0];
+
+        assert(isThrown, this.truth, `${toString} <check.throws>`)
     }
 
 }

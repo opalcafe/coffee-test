@@ -1,4 +1,4 @@
-import { assert, identity, toJson, ListData } from "..";
+import { assert, identity, toString as toJson, ListData } from "..";
 import { CoffeeMatchArray} from "../contract";
 
 export default class ArrayMatch<T>
@@ -18,7 +18,7 @@ export default class ArrayMatch<T>
         assert(identity(this.first, another),this.truth, "<array.is>")
     }
     length(exp : number){
-        assert(this.array.length == exp, this.truth, `actual : ${this.array.length} <array.length> expect: ${exp}`);
+        assert(this.array.length == exp, this.truth, `actual-length:(${this.array.length})<array.length>expect-length:(${exp})`);
     }
     empty(){
         this.length(0);
@@ -30,7 +30,7 @@ export default class ArrayMatch<T>
             if(identity(ilocal, value))
                 found = true;
         }
-        assert(found, this.truth, "<array.contains>");
+        assert(found, this.truth, `<array.contains>contain:(${toJson(value)})`);
     }
     index(index : number, val : T){
         assert(identity(this.array[index],val),this.truth, "<array.index>")

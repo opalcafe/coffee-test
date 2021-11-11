@@ -1,13 +1,10 @@
-import { assert, identity, ListData, toJson } from "..";
+import { assert, identity, ListData, toString as toJson } from "..";
 import { CoffeeMatchArray } from "../contract";
-//import { CoffeeMatchList } from "../contact";
-
 
 export default class ListMatch<T> implements CoffeeMatchArray<T>
 {
     private array : any
     private truth : boolean
-
     not! : ListMatch<T>
 
     constructor(array : ListData<T>, truth : boolean){
@@ -71,7 +68,6 @@ export default class ListMatch<T> implements CoffeeMatchArray<T>
         }
         return found;
     }
-
     appearsExactly(val  : T, times : number){
         assert(this.__count(val) === times, this.truth, "<array.appearsExactly>")
     }
@@ -86,7 +82,5 @@ export default class ListMatch<T> implements CoffeeMatchArray<T>
     }
     appearsLesserOrEqual(val: T, times : number){
         assert(this.__count(val) <= times, this.truth, "<array.appearsLesserOrEqual>")
-    }
-   
-    
+    } 
 }

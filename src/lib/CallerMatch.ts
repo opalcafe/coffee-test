@@ -13,7 +13,6 @@ export default class CallerMatch implements CoffeeCaller {
         this.truth = truth;
         if(truth == true)
             this.not = new CallerMatch(false, name);
-
     }
     call(){
         this.not?.call()

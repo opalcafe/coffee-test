@@ -1,17 +1,21 @@
 {
-  "name": "coffeetype-test",
+  "name": "coffeetype-test-ts",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
-  
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "exam": "ts-node-dev --respawn ./test/Exams.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "example": "ts-node-dev ./test/example/Exam test/example",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build" : "ts-node-dev ./test/AllBasis && tsc",
+    "live-test" : "ts-node-dev --respawn ./test/example/LiveTest"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^16.11.6",
     "ts-node-dev": "^1.1.8",
     "typescript": "^4.4.4"
   }
