@@ -10,7 +10,9 @@
     "example": "ts-node-dev ./test/example/Exam test/example",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build" : "ts-node-dev ./test/AllBasis && tsc",
-    "live-test" : "ts-node-dev --respawn ./test/example/LiveTest"
+    "live-test" : "ts-node-dev --respawn ./test/example/LiveTest",
+    "hooks" : "ts-node-dev --respawn ./test/example/Hooks",
+    "api" : "ts-node-dev --respawn ./test/api/#api.ts"
   },
   "author": "",
   "license": "ISC",

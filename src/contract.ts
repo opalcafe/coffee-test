@@ -3,8 +3,8 @@ import { ListData } from ".";
 export interface CoffeeCheck<T> {
     not : CoffeeCheck<T>
 
-    is(val : any) : void
-    isType(val : T) : void
+    is(val : T) : void
+    isAny(val : any) : void
     isTrue():void
     isFalse():void
     isNull():void

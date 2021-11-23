@@ -1,28 +1,39 @@
-import ArrayMatch from "./lib/ArrayMatch";
 import CheckMatch from "./lib/CheckMatch";
 import CallerMatch from "./lib/CallerMatch";
 import { CoffeeCaller, CoffeeCheck, CoffeeMatchArray} from "./contract";
 import ListMatch from "./lib/ListMatch";
+import ExamBatch from "./lib/ExamBatch";
+
 import fs from "fs"
 
-//let result = newResult()
-const examsToRun : ExamFile[] = []
-
-let Flag_FAILED = false;
-let currentFile : ExamFile = {
-    result : newResult(),
-    hooks : {},
-    file : "default",
+export function newFile(file : string) : ExamFile {
+    return {
+        file,
+        hooks : {},
+        result  : newResult()
+    }
 }
-let currentResult = currentFile.result
+
+let batcher = new ExamBatch();
+let Flag_FAILED = false;
+let currentResult = batcher.currentFile().result
 let totalResult = newResult();
 
-type Func =  ()=>void
+function reset(){
+    batcher = new ExamBatch();
+    Flag_FAILED = false;
+    currentResult = batcher.currentFile().result;
+    totalResult = newResult();
+}
+
+
+export type Func =  ()=>void
 type ExamDetail = {
     test : ()=>void,
     name : string,
 }
-type ExamFile = {
+
+export type ExamFile = {
     result : TestResult,
     hooks : ExamHooks
     file : string
@@ -71,18 +82,6 @@ function pushResult(){
     totalResult.totalTrue += currentResult.totalTrue;
 }
 
-function newFile(file : string) : ExamFile {
-    return {
-        file,
-        hooks : {},
-        result  :newResult()
-    }
-}
-
-function pushFile(){
-    examsToRun.push(currentFile);
-}
-
 function newResult() : TestResult {
     return {
         exams : [],
@@ -93,7 +92,7 @@ function newResult() : TestResult {
         totalTrue: 0
     }
 }
-function basis(func : ()=>void, doesThrow : boolean){
+function basis(func : ()=>void, doesThrow : boolean) : void {
     let didthrow = false;
     try{
         func();
@@ -107,7 +106,7 @@ function basis(func : ()=>void, doesThrow : boolean){
     }
 }
 
-async function testfiles(params? : ExamParams) : Promise<TestResult>{
+async function testfiles(params? : ExamParams) : Promise<TestResult> {
     const dir = params?.dir ?? "./";
     const filesToRun = params?.files;
     const override = params?.runAll ?? false;
@@ -119,8 +118,7 @@ async function testfiles(params? : ExamParams) : Promise<TestResult>{
         if(item.endsWith(".test.ts")){
             const file = `${item.substring(0, item.length-8)}`
             const testfilePath = `${process.cwd()}\\${dir}\\${item}`
-            currentFile = newFile(file);
-      
+        
             if(override){
                 await import(testfilePath);
             }
@@ -130,7 +128,7 @@ async function testfiles(params? : ExamParams) : Promise<TestResult>{
             }else {
                 await import(testfilePath);
             }
-            pushFile();
+            pushBatch(file);
         }
     }
     return run({
@@ -144,7 +142,7 @@ async function testfiles(params? : ExamParams) : Promise<TestResult>{
 
 export type ListData<T> = {[key : string] : T } | T[]
 
-export function assert(statement : boolean, truth : boolean, msg : string){
+export function assert(statement : boolean, truth : boolean, msg : string) : void {
     if(statement !== truth){
         console.log('\x1b[41m\x1b[30m%s\x1b[0m', msg);
         console.trace();
@@ -155,18 +153,18 @@ export function assert(statement : boolean, truth : boolean, msg : string){
     currentResult.totalTrue++
 }
 
-export function success(func : ()=>void){
+export function success(func : ()=>void) : void {
     basis(func, false);
 }
 
-export function fail(func : ()=>void){
+export function fail(func : ()=>void): void {
     basis(func, true);
 }
 
-export function identity(first : any, second : any){
+export function identity(first : any, second : any) : boolean {
     return Object.is(first, second);
 }
-export function toString(object : any):string{
+export function toString(object : any) : string {
     const asJSON = JSON.stringify(object);
     return asJSON ?? `${object}`
 }
@@ -183,7 +181,7 @@ export function check<T>(val : T) : CoffeeCheck<T>{
     return new CheckMatch<T>(val, true);
 }
 
-export function waitfor(millis : number):Promise<void>{
+export function timeout(millis : number) : Promise<void>{
     return new Promise((resolve)=>{
         setTimeout(()=>{
             resolve()
@@ -191,36 +189,42 @@ export function waitfor(millis : number):Promise<void>{
     })
 }
 
-export async function out(msg : any){
+export async function out(msg : any) {
     console.log("\x1b[32m%s\x1b[0m", `\t${msg}`)
 }
 
-export function exam(name : string, test : Func){
-    currentFile.result.exams.push({
-        name,
-        test
-    });
+export function pushBatch(name : string) {
+    batcher.push(name);
 }
-export function examIgnore(name : string, test : Func){
+
+export function exam(name : string, test : Func) {
+    batcher.addExam(name, test);
+}
+
+export function examIgnore(name : string, test : Func) {
     console.log('\x1b[43m\x1b[30m%s\x1b[0m', `Ignoring Exam:(${name})`)
 }
-export function beforeLocalExam(func : Func){
-    currentFile.hooks.beforeExam = func;
+
+export function beforeLocalExam(func : Func) {
+    batcher.beforeExam(func);
 }
 
-export function afterLocalExam(func : Func){
-    currentFile.hooks.afterExam = func;
+export function afterLocalExam(func : Func) {
+    batcher.afterExam(func);
 }
 
-export function startLocalTest(func : Func){
-    currentFile.hooks.startLocal = func;
+export function startLocalTest(func : Func) {
+    batcher.startLocal(func);
 }
 
-export function endLocalTest(func : Func){
-    currentFile.hooks.endLocal = func;
+export function endLocalTest(func : Func) {
+    batcher.endLocal(func);
 }
 
 export async function run(params? : RunParams) : Promise<TestResult> {
+    /* Check any exams still batched in current batch if so pushg it */
+    const examsToRun = batcher.done();
+
     const {forceAll, startTest, endTest, beforeExam, afterExam } = params ?? {}
 
     console.log('\x1b[33m%s\x1b[0m', "CoffeeTest is Running")
@@ -235,7 +239,7 @@ export async function run(params? : RunParams) : Promise<TestResult> {
         currentResult = result;
 
         if(toRun.result.exams.length > 0)
-            console.log('\x1b[33m%s\x1b[0m', `File @[${toRun.file}]`)
+            console.log('\x1b[33m%s\x1b[0m', `Batch @[${toRun.file}]`)
         await toRun.hooks.startLocal?.();
         for(let i=0; i < result.exams.length; i++){
             const myExam = result.exams[i];
@@ -266,10 +270,10 @@ export async function run(params? : RunParams) : Promise<TestResult> {
             }
             await afterExam?.();
             await toRun.hooks.afterExam?.();
-            
         }
         await toRun.hooks.endLocal?.();
         pushResult();
+        batcher = new ExamBatch();
 
     }
     await endTest?.();
@@ -289,9 +293,10 @@ export async function run(params? : RunParams) : Promise<TestResult> {
         
     console.log('\x1b[42m\x1b[30m%s\x1b[0m', `(${totalResult.totalTrue}/${totalResult.totalTrue + totalResult.totalFalse}) Total Assert Successful`);
     let ret = totalResult;
-    totalResult = newResult();
+    reset()
     return ret;
 }
+
 export function getTests(dir : string = "./") : string[] {
     const testFiles : string[] = [];
     const files = fs.readdirSync(dir);
@@ -307,3 +312,8 @@ export function getTests(dir : string = "./") : string[] {
 export default async function BeginExam(params? : ExamParams) : Promise<TestResult> {
     return testfiles(params)
 }
+
+
+
+
+

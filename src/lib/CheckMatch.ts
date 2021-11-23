@@ -12,23 +12,23 @@ export default class CheckMatch<T> implements CoffeeCheck<T> {
         if(truth)
             this.not = new CheckMatch(val, false);
     }
-    is(another : any){
+    is(another : T){
         assert(identity(this.val,another),this.truth, `actual:(${toJson(this.val)})\n<check.is>\nexpect:(${toJson(another)})`)
     }
-    isType(val : T){
+    isAny(val : any){
         this.is(val);
     }
     isTrue(){
-        this.is(true);
+        this.isAny(true);
     }
     isFalse(){
-        this.is(false);
+        this.isAny(false);
     }
     isNull(){
-        this.is(null)
+        this.isAny(null)
     }
     isUndefined(){
-        this.is(undefined);
+        this.isAny(undefined);
     }
     isDefined(){
         assert(this.val !== undefined, this.truth, `actual:(${toJson(this.val)})\n<check.isDefinied>`)
