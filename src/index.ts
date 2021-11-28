@@ -131,7 +131,7 @@ async function testfiles(params? : ExamParams) : Promise<TestResult> {
             pushBatch(file);
         }
     }
-    return run({
+    return runBatch({
         forceAll : override,
         startTest : params?.startTest,
         endTest : params?.endTest,
@@ -193,6 +193,13 @@ export async function out(msg : any) {
     console.log("\x1b[32m%s\x1b[0m", `\t${msg}`)
 }
 
+export function pendingExams() : number {
+    return batcher.sizeCurrentBatchExam();
+}
+export function pendingBatch() : number {
+    return batcher.sizeBatch();
+}
+
 export function pushBatch(name : string) {
     batcher.push(name);
 }
@@ -205,23 +212,23 @@ export function examIgnore(name : string, test : Func) {
     console.log('\x1b[43m\x1b[30m%s\x1b[0m', `Ignoring Exam:(${name})`)
 }
 
-export function beforeLocalExam(func : Func) {
+export function beforeExam(func : Func) {
     batcher.beforeExam(func);
 }
 
-export function afterLocalExam(func : Func) {
+export function afterExam(func : Func) {
     batcher.afterExam(func);
 }
 
-export function startLocalTest(func : Func) {
+export function startBatch(func : Func) {
     batcher.startLocal(func);
 }
 
-export function endLocalTest(func : Func) {
+export function endBatch(func : Func) {
     batcher.endLocal(func);
 }
 
-export async function run(params? : RunParams) : Promise<TestResult> {
+export async function runBatch(params? : RunParams) : Promise<TestResult> {
     /* Check any exams still batched in current batch if so pushg it */
     const examsToRun = batcher.done();
 

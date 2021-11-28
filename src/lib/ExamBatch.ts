@@ -1,7 +1,7 @@
 import { ExamFile, Func, newFile } from "../index";
 
 export default class ExamBatch {
-    private exams : ExamFile[] = []
+    private examBatch : ExamFile[] = []
     private current : ExamFile
 
     constructor(){
@@ -17,7 +17,7 @@ export default class ExamBatch {
 
     push(name : string) : void {
         this.current.file = name;
-        this.exams.push(this.current);
+        this.examBatch.push(this.current);
         this.current = newFile("default");
     }
 
@@ -36,12 +36,19 @@ export default class ExamBatch {
 
     done(name : string = "end-test") : ExamFile[]{
         this.push(name);
-        const ret = this.exams
-        this.exams = []
+        const ret = this.examBatch
+        this.examBatch = []
         this.current = newFile("default");
         return ret;
     }
     currentFile() : ExamFile {
         return this.current
     }
+    sizeCurrentBatchExam() : number {
+        return this.current.result.exams.length
+    }
+    sizeBatch() : number {
+        return this.examBatch.length;
+    }
+    
 }

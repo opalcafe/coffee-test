@@ -9,10 +9,13 @@
   "scripts": {
     "example": "ts-node-dev ./test/example/Exam test/example",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build" : "ts-node-dev ./test/AllBasis && tsc",
+   
     "live-test" : "ts-node-dev --respawn ./test/example/LiveTest",
-    "hooks" : "ts-node-dev --respawn ./test/example/Hooks",
-    "api" : "ts-node-dev --respawn ./test/api/#api.ts"
+    "hooks" : "ts-node-dev ./test/example/Hooks",
+    "api" : "ts-node-dev ./test/api/#api.ts",
+    "cert" : "ts-node-dev ./test/api/#cert.ts",
+
+    "build": "npm run example && npm run hooks && npm run api && npm run cert && tsc "
   },
   "author": "",
   "license": "ISC",
