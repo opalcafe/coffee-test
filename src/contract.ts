@@ -70,4 +70,11 @@ export interface CoffeeCaller {
     allCalledTimes(callers : CoffeeCaller[], times : number) : void
     allCalledTimesGreater(callers : CoffeeCaller[], times : number) : void
     allCalledTimesGreaterOrEqual(callers : CoffeeCaller[], times : number) : void
+
+    trap(triggerOnCount : number, callback : (trap : CoffeeTrap) => void) : CoffeeTrap 
+}
+
+export interface CoffeeTrap {
+    not : CoffeeTrap
+    isTrapped() : void
 }

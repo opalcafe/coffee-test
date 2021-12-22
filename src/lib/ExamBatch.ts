@@ -1,4 +1,5 @@
-import { ExamFile, Func, newFile } from "../index";
+import { CoffeeCaller } from "../contract";
+import { ExamFile, Func, newFile, Recess } from "../index";
 
 export default class ExamBatch {
     private examBatch : ExamFile[] = []
@@ -8,11 +9,21 @@ export default class ExamBatch {
         this.current = newFile("default");
     }
 
-    addExam(name : string, test : Func) {
+    addExam<T>(name : string, test : Func<T>) {
         this.current.result.exams.push({
             name,
             test
         })
+    }
+    addOngoing<T>(millis : number, callback : (env : T) => void, caller : CoffeeCaller){
+        this.current.result.ongoing.push({
+            millis,
+            callback,
+            caller
+        })
+    }
+    addRecess<T>(callback : Recess<T>) {
+        this.current.hooks.recess = callback
     }
 
     push(name : string) : void {
@@ -21,16 +32,16 @@ export default class ExamBatch {
         this.current = newFile("default");
     }
 
-    startLocal(func : Func) {
+    startLocal<T>(func : Func<T>) {
         this.current.hooks.startLocal = func;
     }
-    endLocal(func : Func) {
+    endLocal<T>(func : Func<T>) {
         this.current.hooks.endLocal = func;
     }
-    beforeExam(func : Func) {
+    beforeExam<T>(func : Func<T>) {
         this.current.hooks.beforeExam = func;
     }
-    afterExam(func : Func) {
+    afterExam<T>(func : Func<T>) {
         this.current.hooks.afterExam = func;
     }
 

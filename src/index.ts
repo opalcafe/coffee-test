@@ -6,6 +6,13 @@ import ExamBatch from "./lib/ExamBatch";
 
 import fs from "fs"
 
+function printRed(msg : any){
+    console.log('\x1b[41m\x1b[30m%s\x1b[0m', ` ${msg} `);
+}
+
+
+const EMPTY : any = {}
+
 export function newFile(file : string) : ExamFile {
     return {
         file,
@@ -14,24 +21,32 @@ export function newFile(file : string) : ExamFile {
     }
 }
 
-let batcher = new ExamBatch();
-let Flag_FAILED = false;
-let currentResult = batcher.currentFile().result
-let totalResult = newResult();
+let xBatcher = new ExamBatch();
+let xFlag_FAILED = false;
+let xCurrentResult = xBatcher.currentFile().result
+let xTotalResult = newResult();
+
+
 
 function reset(){
-    batcher = new ExamBatch();
-    Flag_FAILED = false;
-    currentResult = batcher.currentFile().result;
-    totalResult = newResult();
+    xBatcher = new ExamBatch();
+    xFlag_FAILED = false;
+    xCurrentResult = xBatcher.currentFile().result;
+    xTotalResult = newResult();
 }
 
 
-export type Func =  ()=>void
+export type Func<T> =  (context : T) => void
 type ExamDetail = {
-    test : ()=>void,
+    test : Func<any>,
     name : string,
 }
+type OngoingEvent<T> = {
+    millis : number
+    callback : (env : T) => void
+    caller : CoffeeCaller
+}
+export type Recess<T> = (env : T) => number
 
 export type ExamFile = {
     result : TestResult,
@@ -46,40 +61,43 @@ type TestResult = {
     examsIgnored : string[]
     totalFalse : number,
     totalTrue : number
+
+    ongoing : OngoingEvent<any>[]
 }
 
-type ExamParams = {
+type HelperParam = {
+    jest : "ignore" | "remap"
+}
+
+
+export interface ExamParams<T> {
+    injectContext? : T
+    startTest? : Func<T>,
+    endTest? : Func<T>,
+    beforeExam? : Func<T>
+    afterExam? : Func<T>
+    helper? : HelperParam
+
     dir? : string,
     runAll? : boolean,
     files? : string[],
-    startTest? : Func,
-    endTest? : Func,
-    beforeExam? : Func
-    afterExam? : Func
-}
-
-type RunParams = {
-    forceAll? : boolean,
-    startTest? : Func,
-    endTest? : Func
-    beforeExam? : Func,
-    afterExam? : Func
 }
 
 type ExamHooks = {
-    startLocal? : Func
-    endLocal? : Func,
-    beforeExam? : Func,
-    afterExam? : Func
+    startLocal? : Func<any>
+    endLocal? : Func<any>,
+    beforeExam? : Func<any>,
+    afterExam? : Func<any>
+    recess? : Recess<any>
 }
 
-function pushResult(){
-    currentResult.exams.forEach(item => totalResult.exams.push(item));
-    currentResult.examsFailed.forEach(item => totalResult.examsFailed.push(item));
-    currentResult.examsIgnored.forEach(item => totalResult.examsIgnored.push(item));
-    currentResult.examsSuccess.forEach(item => totalResult.examsSuccess.push(item));
-    totalResult.totalFalse += currentResult.totalFalse;
-    totalResult.totalTrue += currentResult.totalTrue;
+function pushResult() {
+    xCurrentResult.exams.forEach(item => xTotalResult.exams.push(item));
+    xCurrentResult.examsFailed.forEach(item => xTotalResult.examsFailed.push(item));
+    xCurrentResult.examsIgnored.forEach(item => xTotalResult.examsIgnored.push(item));
+    xCurrentResult.examsSuccess.forEach(item => xTotalResult.examsSuccess.push(item));
+    xTotalResult.totalFalse += xCurrentResult.totalFalse;
+    xTotalResult.totalTrue += xCurrentResult.totalTrue;
 }
 
 function newResult() : TestResult {
@@ -89,7 +107,8 @@ function newResult() : TestResult {
         examsIgnored : [],
         examsSuccess : [],
         totalFalse : 0,
-        totalTrue: 0
+        totalTrue: 0,
+        ongoing: []
     }
 }
 function basis(func : ()=>void, doesThrow : boolean) : void {
@@ -106,7 +125,7 @@ function basis(func : ()=>void, doesThrow : boolean) : void {
     }
 }
 
-async function testfiles(params? : ExamParams) : Promise<TestResult> {
+async function testfiles<T>(params? : ExamParams<T>) : Promise<TestResult> {
     const dir = params?.dir ?? "./";
     const filesToRun = params?.files;
     const override = params?.runAll ?? false;
@@ -131,13 +150,7 @@ async function testfiles(params? : ExamParams) : Promise<TestResult> {
             pushBatch(file);
         }
     }
-    return runBatch({
-        forceAll : override,
-        startTest : params?.startTest,
-        endTest : params?.endTest,
-        beforeExam : params?.beforeExam,
-        afterExam  :params?.afterExam
-    });
+    return runBatch(params);
 }
 
 export type ListData<T> = {[key : string] : T } | T[]
@@ -146,11 +159,11 @@ export function assert(statement : boolean, truth : boolean, msg : string) : voi
     if(statement !== truth){
         console.log('\x1b[41m\x1b[30m%s\x1b[0m', msg);
         console.trace();
-        currentResult.totalFalse++
-        Flag_FAILED = true;
+        xCurrentResult.totalFalse++
+        xFlag_FAILED = true;
         throw msg
     }
-    currentResult.totalTrue++
+    xCurrentResult.totalTrue++
 }
 
 export function success(func : ()=>void) : void {
@@ -173,9 +186,13 @@ export function array<T>(array : ListData<T>) : CoffeeMatchArray<T>{
     return new ListMatch(array, true);
 }
 
-export function caller(name? : string) : CoffeeCaller {
-    return new CallerMatch(true, name);
+export function caller(name? : string, startClosed : boolean = false) : CoffeeCaller {
+    return new CallerMatch(true, {
+        name,
+        open : !startClosed
+    });
 }
+
 
 export function check<T>(val : T) : CoffeeCheck<T>{
     return new CheckMatch<T>(val, true);
@@ -194,76 +211,86 @@ export async function out(msg : any) {
 }
 
 export function pendingExams() : number {
-    return batcher.sizeCurrentBatchExam();
+    return xBatcher.sizeCurrentBatchExam();
 }
 export function pendingBatch() : number {
-    return batcher.sizeBatch();
+    return xBatcher.sizeBatch();
 }
 
 export function pushBatch(name : string) {
-    batcher.push(name);
+    xBatcher.push(name);
 }
 
-export function exam(name : string, test : Func) {
-    batcher.addExam(name, test);
+export function exam<T>(name : string, test : Func<T>) {
+    xBatcher.addExam(name, test);
 }
 
-export function examIgnore(name : string, test : Func) {
+export function examIgnore<T>(name : string, test : Func<T>) {
     console.log('\x1b[43m\x1b[30m%s\x1b[0m', `Ignoring Exam:(${name})`)
 }
 
-export function beforeExam(func : Func) {
-    batcher.beforeExam(func);
+export function beforeExam<T>(func : Func<T>) {
+    xBatcher.beforeExam(func);
 }
 
-export function afterExam(func : Func) {
-    batcher.afterExam(func);
+export function afterExam<T>(func : Func<T>) {
+    xBatcher.afterExam(func);
 }
 
-export function startBatch(func : Func) {
-    batcher.startLocal(func);
+export function startBatch<T>(func : Func<T>) {
+    xBatcher.startLocal(func);
 }
 
-export function endBatch(func : Func) {
-    batcher.endLocal(func);
+export function endBatch<T>(func : Func<T>) {
+    xBatcher.endLocal(func);
 }
 
-export async function runBatch(params? : RunParams) : Promise<TestResult> {
+
+export async function runBatch<T>(params? : ExamParams<T>) : Promise<TestResult> {
     /* Check any exams still batched in current batch if so pushg it */
-    const examsToRun = batcher.done();
 
-    const {forceAll, startTest, endTest, beforeExam, afterExam } = params ?? {}
+    const context = params?.injectContext ?? EMPTY;
+    const examsToRun = xBatcher.done();
+
+    const {runAll, startTest, endTest, beforeExam, afterExam } = params ?? {}
 
     console.log('\x1b[33m%s\x1b[0m', "CoffeeTest is Running")
     let success = 0;
     let failed = 0
     let ignored = 0
     /* Run start func then all tests */
-    await startTest?.()
+    await startTest?.(context)
+    out(`Running ${examsToRun.length} exams`)
     for(let j=0; j < examsToRun.length; j++){
         const toRun = examsToRun[j];
         const result = examsToRun[j].result;
-        currentResult = result;
+        xCurrentResult = result;
 
         if(toRun.result.exams.length > 0)
             console.log('\x1b[33m%s\x1b[0m', `Batch @[${toRun.file}]`)
-        await toRun.hooks.startLocal?.();
+        await toRun.hooks.startLocal?.(context);
+        startOngoing(toRun, context);
         for(let i=0; i < result.exams.length; i++){
             const myExam = result.exams[i];
-            await beforeExam?.();
-            await toRun.hooks.beforeExam?.()
-            try{
-                if(myExam.name.startsWith("?") && !forceAll){
+            await beforeExam?.(context);
+            await toRun.hooks.beforeExam?.(context)
+            try {
+                if(myExam.name.startsWith("?") && !runAll){
                     ++ignored
                     result.examsIgnored.push(myExam.name);
                     console.log('\x1b[33m%s\x1b[0m', `[${myExam.name}]`)
                     continue
                 }
-                Flag_FAILED = false;
+                xFlag_FAILED = false;
                 console.log('\x1b[36m%s\x1b[0m', `Run > [${myExam.name}]`)
-                await myExam.test();
-                if(Flag_FAILED){
-                    Flag_FAILED = false;
+
+                /* Where tests runn*/
+                {
+                    const test : any = myExam.test;
+                    await test(context);
+                }
+                if(xFlag_FAILED){
+                    xFlag_FAILED = false;
                     if(!result.examsFailed.includes(myExam.name))
                         result.examsFailed.push(myExam.name);
                     throw `${myExam.name} Failed`
@@ -274,32 +301,44 @@ export async function runBatch(params? : RunParams) : Promise<TestResult> {
                 if(!result.examsFailed.includes(myExam.name))
                     result.examsFailed.push(myExam.name);
                 ++failed
+                printRed(e);
             }
-            await afterExam?.();
-            await toRun.hooks.afterExam?.();
+            await afterExam?.(context);
+            await toRun.hooks.afterExam?.(context);
         }
-        await toRun.hooks.endLocal?.();
+        
+        const recess = toRun.hooks.recess;
+        if(recess){
+            out(`awaiting reccess`)
+            await timeout(recess(context) * 1000);
+        }
+        try  {
+            await toRun.hooks.endLocal?.(context); 
+        }catch(e){
+        }
+        endOngoing()
         pushResult();
-        batcher = new ExamBatch();
+        /* Check recess hook */
+        xBatcher = new ExamBatch();
 
     }
-    await endTest?.();
+    await endTest?.(context);
     //TODO:dump this in a functuion 'DumpReport'
     console.log('\x1b[33m%s\x1b[0m', `Test Stats`)
-    console.log('\x1b[42m\x1b[30m%s\x1b[0m', `${success}/${totalResult.exams.length} Tests Successful`);
+    console.log('\x1b[42m\x1b[30m%s\x1b[0m', `${success}/${xTotalResult.exams.length} Tests Successful`);
     if(ignored > 0)
-    console.log('\x1b[33m%s\x1b[0m', `${ignored}/${totalResult.exams.length} Tests Ignored`);
+    console.log('\x1b[33m%s\x1b[0m', `${ignored}/${xTotalResult.exams.length} Tests Ignored`);
     if(failed > 0)
-        console.log('\x1b[41m\x1b[30m%s\x1b[0m', `${failed}/${totalResult.exams.length} Tests Failed`);
-    for(let i=0; i < totalResult.examsFailed.length; i++){
-        console.log('\x1b[41m\x1b[30m%s\x1b[0m', `@> ${totalResult.examsFailed[i]}`);
+        console.log('\x1b[41m\x1b[30m%s\x1b[0m', `${failed}/${xTotalResult.exams.length} Tests Failed`);
+    for(let i=0; i < xTotalResult.examsFailed.length; i++){
+        console.log('\x1b[41m\x1b[30m%s\x1b[0m', `@> ${xTotalResult.examsFailed[i]}`);
     }
     console.log('\x1b[33m%s\x1b[0m', `Assert Stats`)
-    if(totalResult.totalFalse > 0)
-        console.log('\x1b[41m\x1b[30m%s\x1b[0m', `(${totalResult.totalFalse}/${totalResult.totalTrue + totalResult.totalFalse}) Total Assertion Errors Before Failure`);
+    if(xTotalResult.totalFalse > 0)
+        console.log('\x1b[41m\x1b[30m%s\x1b[0m', `(${xTotalResult.totalFalse}/${xTotalResult.totalTrue + xTotalResult.totalFalse}) Total Assertion Errors Before Failure`);
         
-    console.log('\x1b[42m\x1b[30m%s\x1b[0m', `(${totalResult.totalTrue}/${totalResult.totalTrue + totalResult.totalFalse}) Total Assert Successful`);
-    let ret = totalResult;
+    console.log('\x1b[42m\x1b[30m%s\x1b[0m', `(${xTotalResult.totalTrue}/${xTotalResult.totalTrue + xTotalResult.totalFalse}) Total Assert Successful`);
+    let ret = xTotalResult;
     reset()
     return ret;
 }
@@ -316,8 +355,47 @@ export function getTests(dir : string = "./") : string[] {
     return testFiles;
 } 
 
-export default async function BeginExam(params? : ExamParams) : Promise<TestResult> {
+export default async function BeginExam<T>(params? : ExamParams<T>) : Promise<TestResult> {
+    for(const index in process.argv){
+        const arg = process.argv[index];
+        if(arg == "--all" && params){
+            out('>> Running All Tests')
+            params.runAll = true;
+        }
+            
+    }
+    
     return testfiles(params)
+}
+
+
+/* Version 0.6 */
+export function ongoing<T>(millis : number, callback : (env : T) => void) : CoffeeCaller {
+    const callme = caller();
+    xBatcher.addOngoing(Math.max(100, millis), callback, callme);
+    return callme
+} 
+export function recess<T>(callback : Recess<T>) : void {
+    xBatcher.addRecess(callback);
+}
+
+export function pause(seconds : number) : Promise<void> {
+    return timeout(seconds * 1000)
+}
+
+let xALL_TIMERS: NodeJS.Timer[] = []
+
+function startOngoing(file : ExamFile, env : any){
+    file.result.ongoing.forEach(ev => {
+        const res = setInterval(()=>{
+            ev.callback(env);
+            ev.caller.call()
+        }, ev.millis)
+        xALL_TIMERS.push(res);
+    })
+}
+function endOngoing(){
+    xALL_TIMERS.forEach(timer => clearInterval(timer))
 }
 
 

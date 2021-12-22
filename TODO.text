@@ -1,0 +1,6 @@
+
+
+- Improve Errtor message on fail
+- dump stack on fail 
+
+- cirular json

@@ -1,26 +1,55 @@
 import { assert } from "..";
-import { CoffeeCaller } from "../contract";
+import { CoffeeCaller, CoffeeTrap } from "../contract";
+import TrapMatch from "./TrapMatch"
+
+type CParam ={
+    name? : string
+    open? : boolean
+}
+
+
 
 export default class CallerMatch implements CoffeeCaller {
     private name : string
     private callCount = 0;
     private truth : boolean
     private frozen = false;
+
+    private _open = true
+
     not! : CoffeeCaller
 
-    constructor( truth : boolean, name?: string){
-        this.name=  name ?? "NA";
+    private trapList : TrapMatch[] = []
+
+    constructor(truth : boolean, param?: CParam){
+        this.name=  param?.name ?? "NA";
+        this._open = param?.open ?? true
+       
         this.truth = truth;
         if(truth == true)
-            this.not = new CallerMatch(false, name);
+            this.not = new CallerMatch(false, param);
+    }
+    trap(triggerOnCount: number, callback: (trap: CoffeeTrap) => void): CoffeeTrap {
+        const trap = new TrapMatch(true, triggerOnCount, callback);
+        this.trapList.push(trap)
+        return trap;
     }
     call(){
-        this.not?.call()
+        if(!this.open)
+            throw `${this.name} <caller is not open>`
         if(this.frozen){
             console.trace();
             throw `${this.name} <caller is frozen>`
         }
+        this.not?.call()
         this.callCount++;
+        this.trapList.forEach(trap => trap.count())
+    }
+    open(){
+        this._open = true;
+    }
+    close(){
+        this._open = false;
     }
     freeze(){
         this.frozen = true;
