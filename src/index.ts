@@ -362,12 +362,10 @@ export default async function BeginExam<T>(params? : ExamParams<T>) : Promise<Te
             out('>> Running All Tests')
             params.runAll = true;
         }
-            
     }
     
     return testfiles(params)
 }
-
 
 /* Version 0.6 */
 export function ongoing<T>(millis : number, callback : (env : T) => void) : CoffeeCaller {

@@ -1,5 +1,4 @@
 import { assert, identity, toString as toJson, ListData } from "..";
-import { CoffeeMatchArray} from "../contract";
 
 export default class ArrayMatch<T>
 {
