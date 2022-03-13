@@ -14,7 +14,8 @@
     "api": "ts-node-dev ./test/api/#api.ts",
     "cert": "ts-node-dev ./test/api/#cert.ts",
     "test-inject": "ts-node-dev --respawn ./test/inject/#run.ts",
-    "build": "npm run example && npm run hooks && npm run api && npm run cert && tsc "
+    "build": "npm run example && npm run hooks && npm run api && npm run cert && tsc ",
+    "basic-test" : "ts-node-dev --respawn ./test/BasicTest.ts "
   },
   "author": "",
   "license": "ISC",

@@ -178,8 +178,19 @@ export function identity(first : any, second : any) : boolean {
     return Object.is(first, second);
 }
 export function toString(object : any) : string {
-    const asJSON = JSON.stringify(object);
-    return asJSON ?? `${object}`
+    const typeObject = typeof object
+
+    if(typeObject != "object")
+        return `${object}`
+
+    const plainPojo : any = {}
+
+    for(const key in object){
+        const member = object[key]
+        if(typeof member != 'function'&& typeof member != 'undefined')
+            plainPojo[key] = JSON.parse(JSON.stringify(member))
+    }
+    return JSON.stringify(plainPojo);
 }
 
 export function array<T>(array : ListData<T>) : CoffeeMatchArray<T>{
@@ -196,6 +207,17 @@ export function caller(name? : string, startClosed : boolean = false) : CoffeeCa
 
 export function check<T>(val : T) : CoffeeCheck<T>{
     return new CheckMatch<T>(val, true);
+}
+
+export async function throws(message : string, block : () => void){
+    let didThrow = false
+    try {
+        await block()
+    }
+    catch(e){
+        didThrow = true
+    }
+    assert(didThrow, true, message)
 }
 
 export function timeout(millis : number) : Promise<void>{
